@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelBundle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --card: #21253a; --border: #2e3350;
+      --accent: #4f7ef7; --accent-hover: #3b6de8; --text: #e8eaf6; --muted: #8890b5;
+      --success: #34d399; --danger: #f87171; --radius: 10px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-tabs { display: flex; gap: .5rem; }
+    .tab-btn {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      padding: .45rem 1rem; border-radius: 6px; font-size: .875rem; font-weight: 500; transition: all .2s;
+    }
+    .tab-btn.active, .tab-btn:hover { background: var(--card); color: var(--text); }
+    .tab-btn.active { color: var(--accent); }
+    .user-chip {
+      display: flex; align-items: center; gap: .5rem; background: var(--card);
+      border: 1px solid var(--border); border-radius: 20px; padding: .3rem .8rem;
+      font-size: .8rem; color: var(--muted);
+    }
+    .user-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    #logout-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      cursor: pointer; padding: .35rem .8rem; border-radius: 6px; font-size: .8rem;
+      font-family: inherit; transition: all .2s;
+    }
+    #logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* MAIN */
+    main { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* CARD */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.8rem; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.2rem; }
+
+    /* FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-full { grid-column: 1 / -1; }
+    label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    input, select {
+      width: 100%; padding: .65rem .85rem; background: var(--card); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-size: .9rem; font-family: inherit;
+      transition: border-color .2s; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--card); }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+      padding: .65rem 1.4rem; border-radius: 7px; font-size: .9rem; font-weight: 600;
+      border: none; cursor: pointer; transition: all .2s; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-block { width: 100%; margin-top: 1.2rem; }
+
+    /* ALERTS */
+    .alert { border-radius: 7px; padding: .75rem 1rem; font-size: .875rem; margin-top: 1rem; display: none; }
+    .alert.show { display: block; }
+    .alert-success { background: rgba(52,211,153,.12); color: var(--success); border: 1px solid rgba(52,211,153,.25); }
+    .alert-danger  { background: rgba(248,113,113,.12); color: var(--danger);  border: 1px solid rgba(248,113,113,.25); }
+
+    /* LOCK GATE */
+    .lock-gate {
+      text-align: center; padding: 3.5rem 2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .lock-gate h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+    .lock-gate p { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
+    .lock-gate .btn-primary { padding: .6rem 1.5rem; }
+
+    /* SEARCH RESULTS */
+    .spinner { display: none; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin: 2rem auto; }
+    .spinner.show { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #results-summary {
+      font-size: .875rem; color: var(--muted); margin-bottom: 1rem;
+      padding: .6rem 1rem; background: var(--card); border-radius: 7px;
+      display: none; display: flex; justify-content: space-between; align-items: center;
+    }
+    #results-summary.show { display: flex; }
+    .searched-by { font-size: .78rem; color: var(--accent); }
+
+    .bundle-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.2rem 1.5rem; margin-bottom: 1rem; transition: border-color .2s, transform .15s;
+    }
+    .bundle-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .bundle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .rank-badge { background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; padding: .2rem .6rem; border-radius: 20px; }
+    .value-score { font-size: .8rem; color: var(--success); font-weight: 600; }
+    .total-price { font-size: 1.3rem; font-weight: 700; }
+    .bundle-details { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .detail-box { background: var(--card); border-radius: 7px; padding: .9rem 1rem; }
+    .detail-box h4 { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: .6rem; }
+    .detail-row { display: flex; justify-content: space-between; font-size: .85rem; margin-bottom: .3rem; }
+    .detail-row span:last-child { color: var(--accent); font-weight: 600; }
+    .budget-remaining { margin-top: .8rem; font-size: .82rem; color: var(--success); text-align: right; font-weight: 500; }
+    .empty-state { text-align: center; color: var(--muted); padding: 2.5rem; font-size: .9rem; }
+
+    /* USERS */
+    .user-row {
+      display: flex; align-items: center; gap: 1rem;
+      padding: .75rem 1rem; border-radius: 7px; border: 1px solid var(--border);
+      margin-bottom: .6rem; background: var(--card);
+    }
+    .user-avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .9rem; flex-shrink: 0;
+    }
+    .user-name { font-weight: 600; font-size: .9rem; }
+    .user-email { font-size: .8rem; color: var(--muted); }
+
+    /* TAB SWITCHER */
+    .auth-tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+    .auth-tab {
+      flex: 1; padding: .6rem; border-radius: 7px; border: 1px solid var(--border);
+      background: none; color: var(--muted); cursor: pointer; font-size: .875rem;
+      font-family: inherit; font-weight: 500; transition: all .2s;
+    }
+    .auth-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">✈ TravelBundle</div>
+  <div class="nav-right">
+    <div id="user-chip" class="user-chip" style="display:none">
+      <div class="dot"></div>
+      <span id="nav-email"></span>
+    </div>
+    <div class="nav-tabs" id="nav-tabs" style="display:none">
+      <button class="tab-btn active" onclick="showPage('search', this)">Search</button>
+      <button class="tab-btn" onclick="showPage('users', this); loadUsers()">Users</button>
+    </div>
+    <button id="logout-btn" style="display:none" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── AUTH PAGE (shown first) ── -->
+  <div class="page active" id="page-auth">
+    <div class="card" style="max-width:480px; margin:0 auto;">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <div id="auth-login">
+        <div>
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="test@example.com" />
+        </div>
+        <div style="margin-top:1rem">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" />
+        </div>
+        <button class="btn btn-primary btn-block" onclick="login()">Login →</button>
+        <div class="alert alert-success" id="login-success"></div>
+        <div class="alert alert-danger"  id="login-error"></div>
+        <p style="margin-top:1rem; text-align:center; font-size:.8rem; color:var(--muted)">
+          Test: <strong>test@example.com</strong> / <strong>password123</strong>
+        </p>
+      </div>
+
+      <!-- Register Form -->
+      <div id="auth-register" style="display:none">
+        <div>
+          <label>Full Name</label>
+          <input type="text" id="reg-name" placeholder="Jane Doe" />
+        </div>
+        <div style="margin-top:1rem">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="jane@example.com" />
+        </div>
+        <div style="margin-top:1rem">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="••••••••" />
+        </div>
+        <button class="btn btn-primary btn-block" onclick="register()">Create Account →</button>
+        <div class="alert alert-success" id="reg-success"></div>
+        <div class="alert alert-danger"  id="reg-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEARCH PAGE ── -->
+  <div class="page" id="page-search">
+    <div class="card">
+      <h2>🌍 Find Travel Bundles</h2>
+      <div class="form-grid">
+        <div class="form-full">
+          <label>Destination</label>
+          <input type="text" id="destination" placeholder="e.g. Paris, Bali, Tokyo" />
+        </div>
+        <div>
+          <label>Departure Date</label>
+          <input type="date" id="departure" />
+        </div>
+        <div>
+          <label>Return Date</label>
+          <input type="date" id="return" />
+        </div>
+        <div>
+          <label>Travel Class</label>
+          <select id="class">
+            <option value="ECONOMY">Economy</option>
+            <option value="BUSINESS">Business</option>
+            <option value="FIRST">First Class</option>
+          </select>
+        </div>
+        <div>
+          <label>Total Budget ($)</label>
+          <input type="number" id="budget" placeholder="e.g. 2000" min="100" />
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="search-btn" onclick="searchBundles()">
+        Search Bundles
+      </button>
+      <div class="alert alert-danger" id="search-error"></div>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+    <div id="results-summary"></div>
+    <div id="results"></div>
+  </div>
+
+  <!-- ── USERS PAGE ── -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <h2>👥 Registered Users</h2>
+      <div id="users-list"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const BASE = 'http://localhost:8080/api';
+  let token = localStorage.getItem('tb_token') || null;
+  let userEmail = localStorage.getItem('tb_email') || null;
+
+  // Init on load
+  if (token) enterApp();
+
+  /* ── NAV ── */
+  function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+
+  function enterApp() {
+    document.getElementById('page-auth').classList.remove('active');
+    document.getElementById('page-search').classList.add('active');
+    document.getElementById('nav-tabs').style.display = 'flex';
+    document.getElementById('logout-btn').style.display = 'block';
+    document.getElementById('user-chip').style.display = 'flex';
+    document.getElementById('nav-email').textContent = userEmail;
+    // Reset tab highlights
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  }
+
+  function logout() {
+    token = null; userEmail = null;
+    localStorage.removeItem('tb_token');
+    localStorage.removeItem('tb_email');
+    document.getElementById('nav-tabs').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+    document.getElementById('user-chip').style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-auth').classList.add('active');
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('results-summary').innerHTML = '';
+  }
+
+  function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((b, i) => b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register')));
+    document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('auth-register').style.display = tab === 'register' ? 'block' : 'none';
+  }
+
+  /* ── ALERTS ── */
+  function showAlert(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 4500);
+  }
+
+  /* ── LOGIN ── */
+  async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showAlert('login-error', 'Please fill in both fields.'); return; }
+    try {
+      const res = await fetch(`${BASE}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) throw new Error('Invalid email or password');
+      const data = await res.json();
+      token = data.token;
+      userEmail = email;
+      localStorage.setItem('tb_token', token);
+      localStorage.setItem('tb_email', email);
+      showAlert('login-success', '✅ Welcome back! Redirecting...');
+      setTimeout(() => enterApp(), 800);
+    } catch (e) {
+      showAlert('login-error', e.message);
+    }
+  }
+
+  /* ── REGISTER ── */
+  async function register() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!name || !email || !password) { showAlert('reg-error', 'Please fill all fields.'); return; }
+    try {
+      const res = await fetch(`${BASE}/auth/register`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      if (!res.ok) throw new Error('Registration failed. Email may already be in use.');
+      showAlert('reg-success', '✅ Account created! Please login.');
+      setTimeout(() => switchAuthTab('login'), 1500);
+    } catch (e) {
+      showAlert('reg-error', e.message);
+    }
+  }
+
+  /* ── SEARCH ── */
+  async function searchBundles() {
+    const destination = document.getElementById('destination').value.trim();
+    const departureDate = document.getElementById('departure').value + 'T00:00:00';
+    const returnDate = document.getElementById('return').value + 'T23:59:59';
+    const travelClass = document.getElementById('class').value;
+    const budget = parseFloat(document.getElementById('budget').value);
+
+    if (!destination || !departureDate || !returnDate || !budget) {
+      showAlert('search-error', 'Please fill in all fields.'); return;
+    }
+
+    const btn = document.getElementById('search-btn');
+    btn.disabled = true; btn.textContent = 'Searching...';
+    document.getElementById('spinner').classList.add('show');
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('results-summary').innerHTML = '';
+
+    try {
+      const res = await fetch(`${BASE}/bundles/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ destination, departureDate, returnDate, travelClass, budget })
+      });
+
+      if (res.status === 401) {
+        logout(); return;
+      }
+      if (!res.ok) throw new Error(await res.text() || 'Server error');
+
+      const data = await res.json();
+      renderResults(data.result, data.searchedBy);
+    } catch (e) {
+      showAlert('search-error', e.message || 'Could not connect to backend.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Search Bundles';
+      document.getElementById('spinner').classList.remove('show');
+    }
+  }
+
+  function renderResults(data, searchedBy) {
+    const summary = document.getElementById('results-summary');
+    const results = document.getElementById('results');
+
+    if (!data || !data.bundles || data.bundles.length === 0) {
+      summary.className = 'show';
+      summary.innerHTML = `<span>No bundles found for <strong>${data?.destination || 'that destination'}</strong>. Try a larger budget or different dates.</span>`;
+      results.innerHTML = '';
+      return;
+    }
+
+    summary.className = 'show';
+    summary.innerHTML = `
+      <span>Found <strong>${data.totalBundlesFound}</strong> bundle(s) for <strong>${data.destination}</strong> · <strong>${data.tripDurationNights}</strong> night(s). Showing top ${data.bundles.length}.</span>
+      <span class="searched-by">🔑 ${searchedBy}</span>
+    `;
+
+    results.innerHTML = data.bundles.map(b => `
+      <div class="bundle-card">
+        <div class="bundle-header">
+          <span class="rank-badge">#${b.rank}</span>
+          <span class="value-score">⭐ Value Score: ${b.valueScore}</span>
+          <span class="total-price">$${b.totalBundlePrice.toFixed(2)}</span>
+        </div>
+        <div class="bundle-details">
+          <div class="detail-box">
+            <h4>✈ Flight</h4>
+            <div class="detail-row"><span>Airline</span><span>${b.flight.airline}</span></div>
+            <div class="detail-row"><span>Class</span><span>${b.flight.travelClass}</span></div>
+            <div class="detail-row"><span>Price</span><span>$${b.flight.flightPrice.toFixed(2)}</span></div>
+          </div>
+          <div class="detail-box">
+            <h4>🏨 Hotel</h4>
+            <div class="detail-row"><span>Name</span><span>${b.hotel.name}</span></div>
+            <div class="detail-row"><span>Rating</span><span>${b.hotel.rating} ★</span></div>
+            <div class="detail-row"><span>Per Night</span><span>$${b.hotel.pricePerNight.toFixed(2)}</span></div>
+            <div class="detail-row"><span>Total Stay</span><span>$${b.hotel.totalHotelCost.toFixed(2)}</span></div>
+          </div>
+        </div>
+        <div class="budget-remaining">💰 Budget Remaining: $${b.budgetRemaining.toFixed(2)}</div>
+      </div>
+    `).join('');
+  }
+
+  /* ── USERS ── */
+  async function loadUsers() {
+    const list = document.getElementById('users-list');
+    list.innerHTML = '<div class="empty-state">Loading...</div>';
+    try {
+      const res = await fetch(`${BASE}/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const users = await res.json();
+      if (!users.length) { list.innerHTML = '<div class="empty-state">No users found.</div>'; return; }
+      list.innerHTML = users.map(u => `
+        <div class="user-row">
+          <div class="user-avatar">${u.name.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="user-name">${u.name}</div>
+            <div class="user-email">${u.email}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state" style="color:var(--danger)">Failed to load users.</div>`;
+    }
+  }
+</script>
+</body>
+</html>
